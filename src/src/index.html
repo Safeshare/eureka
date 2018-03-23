@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>Safeshare</title>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <title>Safeshare</title>
 
-    <!-- Bootstrap -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -23,20 +24,23 @@
         <div class="col-lg-12">
           <h1 class="text-center">Safeshare</h1>
           <hr/>
+          <p id="accountAddress" class="text-center"></p>
           <br/>
           <div id="loader">
             <p class="text-center">Loading...</p>
           </div>
           <div id="content" style="display: none;">
-          Upload File: <input type="file" id="myFile" multiple accept="image/*"><br/>
-          <input type="submit" onclick="App.uploadFile()"> 
-            <hr/>
+            <div onclick="App.uploadFile();" class="upload">
+              <input id="myFile" type="file">
+              <p>Drag your files here or click in this area.</p>
+              <button type="submit">Upload</button>
+            </div>
             <table class="table">
               <thead>
                 <tr>
-                  <th scope="col">File</th>
-                  <th scope="col">Share</th>
-                  <th scope="col">Download</th>
+                  <th scope="col">File Id</th>
+                  <th scope="col"></th>
+                  <th scope="col"></th>
                 </tr>
               </thead>
               <tbody id="fileResults">
@@ -48,12 +52,60 @@
       </div>
     </div>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/web3.min.js"></script>
-    <script src="js/truffle-contract.js"></script>
-    <script src="js/app.js"></script> 
-  </body>
+    <!-- Modal -->
+    <div class="modal fade" id="myModalHorizontal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <button type="button" class="close" 
+          data-dismiss="modal">
+          <span aria-hidden="true">&times;</span>
+          <span class="sr-only">Close</span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Amend Access</h4>
+      </div>
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <form class="form-horizontal" role="form">
+          <div class="form-group">
+            <label  class="col-sm-2 control-label" for="userIndex">User</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="userIndex" placeholder="Input user index"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="role">Role</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" id="role" placeholder="0/1/2"/>
+            </div>
+          </div>
+          <div>
+            <label for="contactChoice1">IsGrant</label>
+            <input type="checkbox" id="isGrant" checked>
+          </div>
+        </form>
+      </div>
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default"
+        data-dismiss="modal">
+        Close
+      </button>
+      <button type="button" class="btn btn-primary" onclick="App.shareFile('hash', document.getElementById('userIndex').value, document.getElementById('role').value, document.getElementById('isGrant').checked)">
+        Save changes
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="js/bootstrap.min.js"></script>
+<script src="js/web3.min.js"></script>
+<script src="js/truffle-contract.js"></script>
+<script src="js/app.js"></script>
+</body>
 </html>
