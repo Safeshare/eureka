@@ -17,6 +17,7 @@ contract AccessControlManager
 
   mapping (string => FileInfo) private UserInfo;
   mapping (string => string[]) private FileList;
+  mapping (string => uint) private FileCount;
   
   function UploadFile(string fileHash, string userId, string token, uint role, string signature) public
   {
@@ -35,6 +36,7 @@ contract AccessControlManager
 
     UserInfo[userId] = fileInfo;
     FileList[userId].push(fileHash);
+    FileCount[userId]++;
   }
 
   function AmendAccess(string fileHash, string senderId, string userId, string token, uint role, bool isGrant, string signature) public
@@ -73,6 +75,7 @@ contract AccessControlManager
             {
               fileInfo.info[fileHash] = AccessInfo(true, token, role);
               FileList[userId].push(fileHash);
+              FileCount[userId]++;
             }
           }
 
@@ -102,11 +105,18 @@ contract AccessControlManager
     return false;
   }
 
-  function ListFiles(string userId, string signature) public constant returns (string[])
+  function GetFileCount(string userId, string signature) public constant returns (uint)
   {
     // Check signature
 
-    return FileList[userId];
+    return FileCount[userId];
+  }
+
+  function GetFileName(string userId, uint index, string signature) public constant returns (string)
+  {
+    // Check signature
+
+    return FileList[userId][index];
   }
 
   function GetToken(string fileHash, string userId, string signature) public constant returns (string)
