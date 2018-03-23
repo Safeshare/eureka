@@ -15,13 +15,17 @@ contract AccessControlManager
     mapping (string => AccessInfo) info;
   }
 
-  mapping (string => FileInfo) private UserInfo;
-  mapping (string => string[]) private FileList;
-  mapping (string => uint) private FileCount;
+  mapping (address => FileInfo) private UserInfo;
+  mapping (address => string[]) private FileList;
+  mapping (address => uint) private FileCount;
   
-  function UploadFile(string fileHash, string userId, string token, uint role, string signature) public
+  function UploadFile(string fileHash, string token, uint role, bytes32 data, uint8 v, bytes32 r, bytes32 s) public
   {
-    // Check signature
+    address userId = msg.sender;
+    if (ecrecover(data, v, r, s) != userId)
+    {
+      return;
+    }
 
     FileInfo storage fileInfo = UserInfo[userId];
     if (fileInfo.present == false)
@@ -39,9 +43,13 @@ contract AccessControlManager
     FileCount[userId]++;
   }
 
-  function AmendAccess(string fileHash, string senderId, string userId, string token, uint role, bool isGrant, string signature) public
+  function AmendAccess(string fileHash, address userId, string token, uint role, bool isGrant, bytes32 data, uint8 v, bytes32 r, bytes32 s) public
   {
-    // Check signature
+    address senderId = msg.sender;
+    if (ecrecover(data, v, r, s) != senderId)
+    {
+      return;
+    }
 
     FileInfo storage fileInfo = UserInfo[senderId];
     if (fileInfo.present == true)
@@ -85,9 +93,13 @@ contract AccessControlManager
     }
   }
 
-  function DownloadFile(string fileHash, string userId, string signature) public constant returns (bool)
+  function DownloadFile(string fileHash, bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (bool)
   {
-    // Check signature
+    address userId = msg.sender;
+    if (ecrecover(data, v, r, s) != userId)
+    {
+      return;
+    }
 
     FileInfo storage fileInfo = UserInfo[userId];
     if (fileInfo.present == true)
@@ -105,23 +117,35 @@ contract AccessControlManager
     return false;
   }
 
-  function GetFileCount(string userId, string signature) public constant returns (uint)
+  function GetFileCount(bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (uint)
   {
-    // Check signature
+    address userId = msg.sender;
+    if (ecrecover(data, v, r, s) != userId)
+    {
+      return;
+    }
 
     return FileCount[userId];
   }
 
-  function GetFileName(string userId, uint index, string signature) public constant returns (string)
+  function GetFileName(uint index, bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (string)
   {
-    // Check signature
+    address userId = msg.sender;
+    if (ecrecover(data, v, r, s) != userId)
+    {
+      return;
+    }
 
     return FileList[userId][index];
   }
 
-  function GetToken(string fileHash, string userId, string signature) public constant returns (string)
+  function GetToken(string fileHash, bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (string)
   {
-    // Check signature
+    address userId = msg.sender;
+    if (ecrecover(data, v, r, s) != userId)
+    {
+      return;
+    }
 
     return UserInfo[userId].info[fileHash].token;
   }
