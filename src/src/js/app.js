@@ -52,23 +52,17 @@ App = {
     // Load contract data
     App.contracts.AccessControlManager.deployed().then(function(instance) {
       managerInstance = instance;
-      var signs = GetSignature();
-      return managerInstance.GetFileCount(App.account,signs[3],signs[0],signs[1]);
+      var signs = App.getSignatures(App.account);
+      return managerInstance.GetFileCount(App.getFixedData(App.account), signs[0], signs[1], signs[2]);
     }).then(function(fileCount) {
       var fileResults = $("#fileResults");
       fileResults.empty();
 
-      var fileSelect = $('#fileSelect');
-      fileSelect.empty();
-
-      for (var i = 1; i <= fileCount; i++) {
-        managerInstance.getFileName(i).then(function(files) {
-          var name = files[0];
-
-          // Render candidate Result
-          var fileTemplate = "<tr><th>" + name + "</th><td><button type="button" id="name" /></td><td><button type="button" name="name" /></td></tr>"
+      for (var i = 0; i < fileCount; i++) {
+        var signs = App.getSignatures(i.toString());
+        managerInstance.GetFileName(i, App.getFixedData(i.toString()), signs[0], signs[1], signs[2]).then(function(fileName) {
+          var fileTemplate = "<tr><th>" + fileName + "</th><td><button type="button" id="fileName" /></td><td><button type="button" name="fileName" /></td></tr>"
           fileResults.append(fileTemplate);
-
         });
       }
       loader.hide();
@@ -76,9 +70,31 @@ App = {
     }).catch(function(error) {
       console.warn(error);
     });
+  },
 
+  getSignatures: function(data) {
+    var sign = web3.eth.sign(App.account, '0x' + App.toHex(data));
+    var signature = sign.substr(2); //remove 0x
+    const r = '0x' + signature.slice(0, 64);
+    const s = '0x' + signature.slice(64, 128);
+    const v = '0x' + signature.slice(128, 130);
+    const vD = web3.toDecimal(v);
 
+    return [vD, r, s];
+  },
 
+  getFixedData: function(data) {
+    var fixedData = `\x19Ethereum Signed Message:\n${data.length}${data}`
+    return web3.sha3(fixedData)
+  }
+
+  toHex: function (str) {
+   var hex = ''
+   for(var i=0 ; i < str.length ; i++) {
+    hex += ''+str.charCodeAt(i).toString(16)
+   }
+
+   return hex
   },
 
 UploadFile: function () 
@@ -150,18 +166,6 @@ GetFileFromClient : function()
     } 
 }
 
-GetSignature : function ()
-{
-  var sign = web3.eth.sign(App.account);
-  var signature = sign.substr(2); //remove 0x
-  const r = '0x' + signature.slice(0, 64);
-  const s = '0x' + signature.slice(64, 128);
-  const v = '0x' + signature.slice(128, 130);
-  const v_decimal = web3.toDecimal(v);
-  var result = [sign,r,s,v_decimal];
-  return result;
-}
-
 };
 
 $(function() {
@@ -169,5 +173,3 @@ $(function() {
     App.init();
   });
 });
-
-
