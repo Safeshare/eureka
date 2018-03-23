@@ -64,19 +64,15 @@ App = {
       managerInstance = instance;
       console.log(App.account);
       console.log(managerInstance);
-      App.getSignatures(App.account, function(v, r, s) {
-        return managerInstance.GetFileCount(App.getFixedData(App.account), v, r, s);
-      });
+      return managerInstance.GetFileCount();
     }).then(function(fileCount) {
       var fileResults = $("#fileResults");
       fileResults.empty();
 
       for (var i = 0; i < fileCount; i++) {
-        App.getSignatures(i.toString(), function(v, r, s) { 
-          managerInstance.GetFileName(i, App.getFixedData(i.toString()), v, r, s).then(function(fileHash) {
-            var fileTemplate = "<tr><th>" + fileHash + "</th><td><input type='button' onClick='App.downloadFile(" + fileHash + ")>Download</input></td><td><input type='button' onClick='App.shareFile(" + fileHash + ")>Share</input></td></tr>"
-            fileResults.append(fileTemplate);
-            });
+        managerInstance.GetFileName(i).then(function(fileHash) {
+          var fileTemplate = "<tr><th>" + fileHash + "</th><td><input type='button' onClick='App.downloadFile(" + fileHash + ")>Download</input></td><td><input type='button' onClick='App.shareFile(" + fileHash + ")>Share</input></td></tr>"
+          fileResults.append(fileTemplate);
         });
       }
       loader.hide();
@@ -97,9 +93,7 @@ App = {
 
         var token = Math.random().toString();
         var data = fileHash + token;
-        App.getSignatures(data, function(v, r, s) {
-          return managerInstance.UploadFile(fileHash, token, App.getFixedData(data), v, r, s);
-        });
+        return managerInstance.UploadFile(fileHash, token);
       }).then(function() {
       }).catch(function(error) {
         console.log(error);
@@ -132,9 +126,7 @@ App = {
   {
      App.contracts.AccessControlManager.deployed().then(function(instance) {
         managerInstance = instance;
-        App.getSignatures(fileHash, function(v, r, s) {
-          return managerInstance.DownloadFile(fileHash, App.getFixedData(fileHash), v, r, s);
-      });
+        return managerInstance.DownloadFile(fileHash);
       }).then(function(canDownloadfile) {
             // Render candidate Result
             if (canDownloadfile) {
@@ -160,44 +152,7 @@ App = {
       }
 
       return null;
-  },
-
-  getSignatures: function(data, onSigned) {
-    console.log(data);
-    console.log('0x' + App.toHex(data));
-    web3.eth.sign(App.account, '0x' + App.toHex(data), function(err, result) {
-      console.log(err);
-      console.log(result);
-      if(err) {
-        console.log(err)
-      }
-      if(result) {
-        var signature = result.substr(2); //remove 0x
-        const r = '0x' + signature.slice(0, 64);
-        const s = '0x' + signature.slice(64, 128);
-        const v = '0x' + signature.slice(128, 130);
-        const vD = web3.toDecimal(v);
-
-        onSigned([vD, r, s]);
-      }
-    });
-
-  },
-
-  getFixedData: function(data) {
-    var fixedData = `\x19Ethereum Signed Message:\n${data.length}${data}`
-
-    return web3.sha3(fixedData)
-  },
-
-  toHex: function (str) {
-   var hex = ''
-   for(var i=0 ; i < str.length ; i++) {
-    hex += ''+str.charCodeAt(i).toString(16)
-   }
-
-   return hex
-  },
+  }
 };
 
 $(function() {

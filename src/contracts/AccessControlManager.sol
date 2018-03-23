@@ -19,13 +19,9 @@ contract AccessControlManager
   mapping (address => string[]) private FileList;
   mapping (address => uint) private FileCount;
   
-  function UploadFile(string fileHash, string token, bytes32 data, uint8 v, bytes32 r, bytes32 s) public
+  function UploadFile(string fileHash, string token) public
   {
     address userId = msg.sender;
-    if (ecrecover(data, v, r, s) != userId)
-    {
-      return;
-    }
 
     FileInfo storage fileInfo = UserInfo[userId];
     if (fileInfo.present == false)
@@ -43,13 +39,9 @@ contract AccessControlManager
     FileCount[userId]++;
   }
 
-  function AmendAccess(string fileHash, address userId, string token, uint role, bool isGrant, bytes32 data, uint8 v, bytes32 r, bytes32 s) public
+  function AmendAccess(string fileHash, address userId, string token, uint role, bool isGrant) public
   {
     address senderId = msg.sender;
-    if (ecrecover(data, v, r, s) != senderId)
-    {
-      return;
-    }
 
     FileInfo storage fileInfo = UserInfo[senderId];
     if (fileInfo.present == true)
@@ -93,13 +85,9 @@ contract AccessControlManager
     }
   }
 
-  function DownloadFile(string fileHash, bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (bool)
+  function DownloadFile(string fileHash) public constant returns (bool)
   {
     address userId = msg.sender;
-    if (ecrecover(data, v, r, s) != userId)
-    {
-      return;
-    }
 
     FileInfo storage fileInfo = UserInfo[userId];
     if (fileInfo.present == true)
@@ -117,35 +105,23 @@ contract AccessControlManager
     return false;
   }
 
-  function GetFileCount(bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (uint)
+  function GetFileCount() public constant returns (uint)
   {
     address userId = msg.sender;
-    if (ecrecover(data, v, r, s) != userId)
-    {
-      return;
-    }
 
     return FileCount[userId];
   }
 
-  function GetFileName(uint index, bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (string)
+  function GetFileName(uint index) public constant returns (string)
   {
     address userId = msg.sender;
-    if (ecrecover(data, v, r, s) != userId)
-    {
-      return;
-    }
 
     return FileList[userId][index];
   }
 
-  function GetToken(string fileHash, bytes32 data, uint8 v, bytes32 r, bytes32 s) public constant returns (string)
+  function GetToken(string fileHash) public constant returns (string)
   {
     address userId = msg.sender;
-    if (ecrecover(data, v, r, s) != userId)
-    {
-      return;
-    }
 
     return UserInfo[userId].info[fileHash].token;
   }
