@@ -60,8 +60,8 @@ App = {
 
       for (var i = 0; i < fileCount; i++) {
         var signs = App.getSignatures(i.toString());
-        managerInstance.GetFileName(i, App.getFixedData(i.toString()), signs[0], signs[1], signs[2]).then(function(fileName) {
-          var fileTemplate = "<tr><th>" + fileName + "</th><td><button type="button" id="fileName" /></td><td><button type="button" name="fileName" /></td></tr>"
+        managerInstance.GetFileName(i, App.getFixedData(i.toString()), signs[0], signs[1], signs[2]).then(function(fileHash) {
+          var fileTemplate = "<tr><th>" + fileHash + "</th><td><input type='button' onClick='App.downloadFile(" + fileHash + ")>Download</input></td><td><input type='button' onClick='App.shareFile(" + fileHash + ")>Share</input></td></tr>"
           fileResults.append(fileTemplate);
         });
       }
@@ -70,6 +70,79 @@ App = {
     }).catch(function(error) {
       console.warn(error);
     });
+  },
+
+  uploadFile: function() 
+  {
+    App.contracts.AccessControlManager.deployed().then(function(instance) {
+        managerInstance = instance;
+
+        var file = App.getFileToUpload();
+        var filehash =  web3.sha3(file.name);
+
+        var token = Math.random().toString();
+        var data = fileHash + token;
+        var signs = App.getSignatures(data);
+        return managerInstance.UploadFile(fileHash, token, App.getFixedData(data), signs[0], signs[1], signs[2]);
+      }).then(function() {
+      }).catch(function(error) {
+        console.warn(error);
+      });
+  }.
+
+  /*
+  shareFile: function(fileHash)
+  {
+     App.contracts.AccessControlManager.deployed().then(function(instance) {
+        managerInstance = instance;
+        var signs = GetSignature();
+        var file = GetFileToUpload();
+        var filehash =  web3.sha3(file.name);  
+        var userId
+        var role
+        var isGrant
+        var data = file.name;
+        return managerInstance.AmendAccess(fileHash, userId, Math.random(),role, isGrant, file.name ,signs[3],signs[0],signs[1]);
+      }).then(function() {
+        loader.hide();
+        content.show();          
+      }).catch(function(error) {
+        console.warn(error);
+      });
+  }
+  */
+
+  downloadFile: function(fileHash)
+  {
+     App.contracts.AccessControlManager.deployed().then(function(instance) {
+        managerInstance = instance;
+        var signs = App.getSignatures(fileHash);
+        return managerInstance.DownloadFile(fileHash, App.getFixedData(fileHash), signs[0], signs[1], signs[2]);
+      }).then(function(canDownloadfile) {
+            // Render candidate Result
+            if (canDownloadfile) {
+              alert("Download now")
+            } else {
+              alert("Access denied")
+            }
+      }).catch(function(error) {
+        console.warn(error);
+      });
+  },
+
+  getFileToUpload: function()
+  {
+    var x = document.getElementById("myFile");  
+     var txt = "";
+      if ('files' in x) {
+          if (x.files.length == 0) {
+              return null;
+          } else {
+               return x.files[0];  
+          }
+      } 
+
+      return null;
   },
 
   getSignatures: function(data) {
@@ -85,8 +158,9 @@ App = {
 
   getFixedData: function(data) {
     var fixedData = `\x19Ethereum Signed Message:\n${data.length}${data}`
+
     return web3.sha3(fixedData)
-  }
+  },
 
   toHex: function (str) {
    var hex = ''
@@ -96,81 +170,6 @@ App = {
 
    return hex
   },
-
-UploadFile: function () 
-{
-  App.contracts.AccessControlManager.deployed().then(function(instance) {
-      managerInstance = instance;
-      var signs = GetSignature();
-      var file = GetFileToUpload();
-      var filehash =  web3.sha3(file.name);       
-      return managerInstance.UploadFile(fileHash,Math.random(), file.name ,signs[3],signs[0],signs[1]);
-    }).then(function() {
-      loader.hide();
-      content.show();          
-    }).catch(function(error) {
-      console.warn(error);
-    });
-  
-}
-
-ShareFile: function ()
-{
-   App.contracts.AccessControlManager.deployed().then(function(instance) {
-      managerInstance = instance;
-      var signs = GetSignature();
-      var file = GetFileToUpload();
-      var filehash =  web3.sha3(file.name);  
-      var userId
-      var role
-      var isGrant
-      var data = file.name;
-      return managerInstance.AmendAccess(fileHash, userId, Math.random(),role, isGrant, file.name ,signs[3],signs[0],signs[1]);
-    }).then(function() {
-      loader.hide();
-      content.show();          
-    }).catch(function(error) {
-      console.warn(error);
-    });
-  
-}
-
-DownloadFile: function ()
-{
-   App.contracts.AccessControlManager.deployed().then(function(instance) {
-      managerInstance = instance;
-      var signs = GetSignature();
-      //getfilehash by binding
-      return managerInstance.DownloadFile(fileHash,signs[3],signs[0],signs[1]);
-    }).then(function(canDownloadfile) {
-     
-          // Render candidate Result
-          if(canDownloadfile){
-            alert("Download now")
-          }
-          else
-          {
-            alert("Access denied")
-          }
-    }).catch(function(error) {
-      console.warn(error);
-    });
-}
-
-GetFileToUpload : function()
-{
-  var x = document.getElementById("myFile");  
-   var txt = "";
-    if ('files' in x) {
-        if (x.files.length == 0) {
-            return null;
-        } else {
-             return x.files[0];  
-        }
-    } 
-    return null;
-}
-
 };
 
 $(function() {
