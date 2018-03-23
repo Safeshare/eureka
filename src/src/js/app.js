@@ -99,19 +99,39 @@ App = {
 
 UploadFile: function () 
 {
-  var dataToSign;
-  var hash = web3.sha3(filename);
-  dataToSign=fileHash + address + Math.random();
-  var signedData = web3.eth.sign(address,dataToSign);
+  App.contracts.AccessControlManager.deployed().then(function(instance) {
+      managerInstance = instance;
+      var signs = GetSignature();
+      var file = GetFileToUpload();
+      var filehash =  web3.sha3(file.name);       
+      return managerInstance.UploadFile(fileHash,Math.random(), file.name ,signs[3],signs[0],signs[1]);
+    }).then(function() {
+      loader.hide();
+      content.show();          
+    }).catch(function(error) {
+      console.warn(error);
+    });
   
 }
 
 ShareFile: function ()
 {
-  var dataToSign;
-  var hash = web3.sha3(filename);
-  dataToSign=fileHash + address + Math.random();
-  var signedData = web3.eth.sign(address,dataToSign);
+   App.contracts.AccessControlManager.deployed().then(function(instance) {
+      managerInstance = instance;
+      var signs = GetSignature();
+      var file = GetFileToUpload();
+      var filehash =  web3.sha3(file.name);  
+      var userId
+      var role
+      var isGrant
+      var data = file.name;
+      return managerInstance.AmendAccess(fileHash, userId, Math.random(),role, isGrant, file.name ,signs[3],signs[0],signs[1]);
+    }).then(function() {
+      loader.hide();
+      content.show();          
+    }).catch(function(error) {
+      console.warn(error);
+    });
   
 }
 
@@ -120,6 +140,7 @@ DownloadFile: function ()
    App.contracts.AccessControlManager.deployed().then(function(instance) {
       managerInstance = instance;
       var signs = GetSignature();
+      //getfilehash by binding
       return managerInstance.DownloadFile(fileHash,signs[3],signs[0],signs[1]);
     }).then(function(canDownloadfile) {
      
@@ -136,34 +157,18 @@ DownloadFile: function ()
     });
 }
 
-GetFileFromClient : function()
+GetFileToUpload : function()
 {
   var x = document.getElementById("myFile");  
    var txt = "";
     if ('files' in x) {
         if (x.files.length == 0) {
-            txt = "Select one or more files.";
+            return null;
         } else {
-            for (var i = 0; i < x.files.length; i++) {
-                txt += "<br><strong>" + (i+1) + ". file</strong><br>";
-                var file = x.files[i];
-                if ('name' in file) {
-                    txt += "name: " + file.name + "<br>";
-                }
-                if ('size' in file) {
-                    txt += "size: " + file.size + " bytes <br>";
-                }
-            }
+             return x.files[0];  
         }
     } 
-    else {
-        if (x.value == "") {
-            txt += "Select one or more files.";
-        } else {
-            txt += "The files property is not supported by your browser!";
-            txt  += "<br>The path of the selected file: " + x.value; // If the browser does not support the files property, it will return the path of the selected file instead. 
-        }
-    } 
+    return null;
 }
 
 };
