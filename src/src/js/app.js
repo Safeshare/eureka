@@ -1,8 +1,7 @@
 App = {
   web3Provider: null,
   contracts: {},
-  account: '0x0',
-  hasVoted: false,
+  account: '',
 
   init: function() {
     return App.initWeb3();
@@ -19,15 +18,20 @@ App = {
       App.web3Provider = new Web3.providers.HttpProvider('http://localhost:7545');
       web3 = new Web3(App.web3Provider);
     }
+
     return App.initContract();
   },
 
   initContract: function() {
     $.getJSON("AccessControlManager.json", function(manager) {
+      console.log("init contract");
+      console.log(manager);
       // Instantiate a new truffle contract from the artifact
       App.contracts.AccessControlManager = TruffleContract(manager);
+      console.log(App.contracts.AccessControlManager);
       // Connect provider to interact with contract
       App.contracts.AccessControlManager.setProvider(App.web3Provider);
+      console.log(App.contracts.AccessControlManager);
 
       return App.render();
     });
@@ -42,53 +46,65 @@ App = {
     content.hide();
 
     // Load account data
-    web3.eth.getCoinbase(function(err, account) {
+    web3.eth.getCoinbase(function(err, acct) {
       if (err === null) {
-        App.account = account;
-        $("#accountAddress").html("Your Account: " + account);
+        App.account = acct;
+        console.log(App.account);
+        $("#accountAddress").html("Your Account: " + App.account);
       }
     });
 
+    console.log(App.account);
+    console.log(App.contracts);
+    console.log(App.contracts.AccessControlManager);
+
     // Load contract data
     App.contracts.AccessControlManager.deployed().then(function(instance) {
+      console.log("random");
       managerInstance = instance;
-      var signs = App.getSignatures(App.account);
-      return managerInstance.GetFileCount(App.getFixedData(App.account), signs[0], signs[1], signs[2]);
+      console.log(App.account);
+      console.log(managerInstance);
+      App.getSignatures(App.account, function(v, r, s) {
+        return managerInstance.GetFileCount(App.getFixedData(App.account), v, r, s);
+      });
     }).then(function(fileCount) {
       var fileResults = $("#fileResults");
       fileResults.empty();
 
       for (var i = 0; i < fileCount; i++) {
-        var signs = App.getSignatures(i.toString());
-        managerInstance.GetFileName(i, App.getFixedData(i.toString()), signs[0], signs[1], signs[2]).then(function(fileHash) {
-          var fileTemplate = "<tr><th>" + fileHash + "</th><td><input type='button' onClick='App.downloadFile(" + fileHash + ")>Download</input></td><td><input type='button' onClick='App.shareFile(" + fileHash + ")>Share</input></td></tr>"
-          fileResults.append(fileTemplate);
+        App.getSignatures(i.toString(), function(v, r, s) { 
+          managerInstance.GetFileName(i, App.getFixedData(i.toString()), v, r, s).then(function(fileHash) {
+            var fileTemplate = "<tr><th>" + fileHash + "</th><td><input type='button' onClick='App.downloadFile(" + fileHash + ")>Download</input></td><td><input type='button' onClick='App.shareFile(" + fileHash + ")>Share</input></td></tr>"
+            fileResults.append(fileTemplate);
+            });
         });
       }
       loader.hide();
       content.show();
     }).catch(function(error) {
-      console.warn(error);
+      console.log(error);
     });
   },
 
   uploadFile: function() 
   {
+    console.log("inup");
     App.contracts.AccessControlManager.deployed().then(function(instance) {
         managerInstance = instance;
 
         var file = App.getFileToUpload();
-        var filehash =  web3.sha3(file.name);
+        var fileHash =  web3.sha3(file.name);
 
         var token = Math.random().toString();
         var data = fileHash + token;
-        var signs = App.getSignatures(data);
-        return managerInstance.UploadFile(fileHash, token, App.getFixedData(data), signs[0], signs[1], signs[2]);
+        App.getSignatures(data, function(v, r, s) {
+          return managerInstance.UploadFile(fileHash, token, App.getFixedData(data), v, r, s);
+        });
       }).then(function() {
       }).catch(function(error) {
-        console.warn(error);
+        console.log(error);
       });
-  }.
+  },
 
   /*
   shareFile: function(fileHash)
@@ -109,15 +125,16 @@ App = {
       }).catch(function(error) {
         console.warn(error);
       });
-  }
+  },
   */
 
   downloadFile: function(fileHash)
   {
      App.contracts.AccessControlManager.deployed().then(function(instance) {
         managerInstance = instance;
-        var signs = App.getSignatures(fileHash);
-        return managerInstance.DownloadFile(fileHash, App.getFixedData(fileHash), signs[0], signs[1], signs[2]);
+        App.getSignatures(fileHash, function(v, r, s) {
+          return managerInstance.DownloadFile(fileHash, App.getFixedData(fileHash), v, r, s);
+      });
       }).then(function(canDownloadfile) {
             // Render candidate Result
             if (canDownloadfile) {
@@ -126,7 +143,7 @@ App = {
               alert("Access denied")
             }
       }).catch(function(error) {
-        console.warn(error);
+        console.log(error);
       });
   },
 
@@ -140,20 +157,31 @@ App = {
           } else {
                return x.files[0];  
           }
-      } 
+      }
 
       return null;
   },
 
-  getSignatures: function(data) {
-    var sign = web3.eth.sign(App.account, '0x' + App.toHex(data));
-    var signature = sign.substr(2); //remove 0x
-    const r = '0x' + signature.slice(0, 64);
-    const s = '0x' + signature.slice(64, 128);
-    const v = '0x' + signature.slice(128, 130);
-    const vD = web3.toDecimal(v);
+  getSignatures: function(data, onSigned) {
+    console.log(data);
+    console.log('0x' + App.toHex(data));
+    web3.eth.sign(App.account, '0x' + App.toHex(data), function(err, result) {
+      console.log(err);
+      console.log(result);
+      if(err) {
+        console.log(err)
+      }
+      if(result) {
+        var signature = result.substr(2); //remove 0x
+        const r = '0x' + signature.slice(0, 64);
+        const s = '0x' + signature.slice(64, 128);
+        const v = '0x' + signature.slice(128, 130);
+        const vD = web3.toDecimal(v);
 
-    return [vD, r, s];
+        onSigned([vD, r, s]);
+      }
+    });
+
   },
 
   getFixedData: function(data) {
