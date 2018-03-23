@@ -19,7 +19,7 @@ contract AccessControlManager
   mapping (address => string[]) private FileList;
   mapping (address => uint) private FileCount;
   
-  function UploadFile(string fileHash, string token, uint role, bytes32 data, uint8 v, bytes32 r, bytes32 s) public
+  function UploadFile(string fileHash, string token, bytes32 data, uint8 v, bytes32 r, bytes32 s) public
   {
     address userId = msg.sender;
     if (ecrecover(data, v, r, s) != userId)
@@ -31,11 +31,11 @@ contract AccessControlManager
     if (fileInfo.present == false)
     {
       fileInfo.present = true;
-      fileInfo.info[fileHash] = AccessInfo(true, token, role);
+      fileInfo.info[fileHash] = AccessInfo(true, token, 3);
     }
     else
     {
-      fileInfo.info[fileHash] = AccessInfo(true, token, role);
+      fileInfo.info[fileHash] = AccessInfo(true, token, 3);
     }
 
     UserInfo[userId] = fileInfo;
