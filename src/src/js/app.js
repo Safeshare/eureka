@@ -50,56 +50,118 @@ App = {
     });
 
     // Load contract data
-    App.contracts.Election.deployed().then(function(instance) {
-      electionInstance = instance;
-      return electionInstance.candidatesCount();
-    }).then(function(candidatesCount) {
-      var candidatesResults = $("#candidatesResults");
-      candidatesResults.empty();
+    App.contracts.AccessControlManager.deployed().then(function(instance) {
+      managerInstance = instance;
+      var signs = GetSignature();
+      return managerInstance.GetFileCount(App.account,signs[3],signs[0],signs[1]);
+    }).then(function(fileCount) {
+      var fileResults = $("#fileResults");
+      fileResults.empty();
 
-      var candidatesSelect = $('#candidatesSelect');
-      candidatesSelect.empty();
+      var fileSelect = $('#fileSelect');
+      fileSelect.empty();
 
-      for (var i = 1; i <= candidatesCount; i++) {
-        electionInstance.candidates(i).then(function(candidate) {
-          var id = candidate[0];
-          var name = candidate[1];
-          var voteCount = candidate[2];
+      for (var i = 1; i <= fileCount; i++) {
+        managerInstance.getFileName(i).then(function(files) {
+          var name = files[0];
 
           // Render candidate Result
-          var candidateTemplate = "<tr><th>" + id + "</th><td>" + name + "</td><td>" + voteCount + "</td></tr>"
-          candidatesResults.append(candidateTemplate);
+          var fileTemplate = "<tr><th>" + name + "</th><td><button type="button" id="name" /></td><td><button type="button" name="name" /></td></tr>"
+          fileResults.append(fileTemplate);
 
-          // Render candidate ballot option
-          var candidateOption = "<option value='" + id + "' >" + name + "</ option>"
-          candidatesSelect.append(candidateOption);
         });
-      }
-      return electionInstance.voters(App.account);
-    }).then(function(hasVoted) {
-      // Do not allow a user to vote
-      if(hasVoted) {
-        $('form').hide();
       }
       loader.hide();
       content.show();
     }).catch(function(error) {
       console.warn(error);
     });
+
+
+
   },
 
-  castVote: function() {
-    var candidateId = $('#candidatesSelect').val();
-    App.contracts.Election.deployed().then(function(instance) {
-      return instance.vote(candidateId, { from: App.account });
-    }).then(function(result) {
-      // Wait for votes to update
-      $("#content").hide();
-      $("#loader").show();
-    }).catch(function(err) {
-      console.error(err);
+UploadFile: function () 
+{
+  var dataToSign;
+  var hash = web3.sha3(filename);
+  dataToSign=fileHash + address + Math.random();
+  var signedData = web3.eth.sign(address,dataToSign);
+  
+}
+
+ShareFile: function ()
+{
+  var dataToSign;
+  var hash = web3.sha3(filename);
+  dataToSign=fileHash + address + Math.random();
+  var signedData = web3.eth.sign(address,dataToSign);
+  
+}
+
+DownloadFile: function ()
+{
+   App.contracts.AccessControlManager.deployed().then(function(instance) {
+      managerInstance = instance;
+      var signs = GetSignature();
+      return managerInstance.DownloadFile(fileHash,signs[3],signs[0],signs[1]);
+    }).then(function(canDownloadfile) {
+     
+          // Render candidate Result
+          if(canDownloadfile){
+            alert("Download now")
+          }
+          else
+          {
+            alert("Access denied")
+          }
+    }).catch(function(error) {
+      console.warn(error);
     });
-  }
+}
+
+GetFileFromClient : function()
+{
+  var x = document.getElementById("myFile");  
+   var txt = "";
+    if ('files' in x) {
+        if (x.files.length == 0) {
+            txt = "Select one or more files.";
+        } else {
+            for (var i = 0; i < x.files.length; i++) {
+                txt += "<br><strong>" + (i+1) + ". file</strong><br>";
+                var file = x.files[i];
+                if ('name' in file) {
+                    txt += "name: " + file.name + "<br>";
+                }
+                if ('size' in file) {
+                    txt += "size: " + file.size + " bytes <br>";
+                }
+            }
+        }
+    } 
+    else {
+        if (x.value == "") {
+            txt += "Select one or more files.";
+        } else {
+            txt += "The files property is not supported by your browser!";
+            txt  += "<br>The path of the selected file: " + x.value; // If the browser does not support the files property, it will return the path of the selected file instead. 
+        }
+    } 
+}
+
+GetSignature : function ()
+{
+  var sign = web3.eth.sign(App.account);
+  var signature = sign.substr(2); //remove 0x
+  const r = '0x' + signature.slice(0, 64);
+  const s = '0x' + signature.slice(64, 128);
+  const v = '0x' + signature.slice(128, 130);
+  const v_decimal = web3.toDecimal(v);
+  var result = [sign,r,s,v_decimal];
+  return result;
+}
+
 };
 
 $(function() {
@@ -107,3 +169,5 @@ $(function() {
     App.init();
   });
 });
+
+
